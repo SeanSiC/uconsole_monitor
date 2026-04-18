@@ -1,0 +1,13 @@
+[Unit]
+Description=uConsole Monitor Tray
+After=graphical-session.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/sean/projects/uconsole_monitor
+ExecStart=/usr/bin/python3 -m monitor.tray.main --config /home/sean/projects/uconsole_monitor/config.json
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

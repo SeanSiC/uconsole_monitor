@@ -1,0 +1,13 @@
+.codex
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+
+data/*.db
+data/*.db-*
+data/latest.json
+data/logs/
+
+/tmp/

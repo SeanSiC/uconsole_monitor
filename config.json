@@ -1,0 +1,16 @@
+{
+  "interval_seconds": 300,
+  "network": {
+    "primary_interface": "wlan0",
+    "secondary_interfaces": ["eth0"]
+  },
+  "services": {
+    "required": ["ssh", "NetworkManager", "wpa_supplicant"],
+    "mihomo": {
+      "unit": "mihomo.service",
+      "controller": "http://127.0.0.1:9090",
+      "secret": "KKNtb1ZJRPzUFBddcYAWUQ==",
+      "group": "Proxy"
+    }
+  }
+}

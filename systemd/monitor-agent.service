@@ -1,0 +1,13 @@
+[Unit]
+Description=uConsole Monitor Agent
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/sean/projects/uconsole_monitor
+ExecStart=/usr/bin/python3 -m monitor.agent.main --config /home/sean/projects/uconsole_monitor/config.json
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
