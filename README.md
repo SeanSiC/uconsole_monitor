@@ -1,36 +1,147 @@
 # uConsole Monitor
 
-Local monitor agent and tray UI for this machine.
+Local system monitor for this uConsole-class Linux machine.
 
-## Features
+It currently provides:
 
-- Collects host metrics every 5 minutes by default
-- Stores history in SQLite and writes `data/latest.json`
-- Evaluates health as `ok`, `warn`, `error`, or `unknown`
-- Shows tray icon state with AppIndicator when the GI namespace is installed
-- Checks Mihomo proxy state through `mihomo.service` and the local controller API
+- a background collector agent
+- a tray/AppIndicator UI
+- color health status for key dimensions
+- local snapshot and event storage
+- Mihomo proxy status monitoring
+- battery status monitoring
 
-## Run
+## Current Scope
+
+This project monitors the current machine only.
+
+The current implementation covers:
+
+- CPU
+- memory
+- disk
+- network
+- required system services
+- Mihomo proxy state
+- battery state
+
+Health is reduced to:
+
+- green: normal
+- yellow: warning
+- red: error
+- gray: stale or unknown
+
+## Components
+
+### `monitor-agent`
+
+Background collector and evaluator.
+
+Responsibilities:
+
+- collect raw state
+- evaluate dimension health
+- write SQLite history
+- write `data/latest.json`
+
+### `monitor-tray`
+
+Tray UI for compact local status viewing.
+
+Responsibilities:
+
+- read `data/latest.json`
+- update tray icon color
+- render summary window
+- open second-level alerts/changes window
+
+## Repository Structure
+
+- [monitor/](/home/sean/projects/uconsole_monitor/monitor)
+- [config.json](/home/sean/projects/uconsole_monitor/config.json)
+- [systemd/](/home/sean/projects/uconsole_monitor/systemd)
+- [CURRENT_ARCHITECTURE.md](/home/sean/projects/uconsole_monitor/CURRENT_ARCHITECTURE.md)
+
+Key modules:
+
+- [monitor/agent/main.py](/home/sean/projects/uconsole_monitor/monitor/agent/main.py)
+- [monitor/collector/system.py](/home/sean/projects/uconsole_monitor/monitor/collector/system.py)
+- [monitor/evaluator/health.py](/home/sean/projects/uconsole_monitor/monitor/evaluator/health.py)
+- [monitor/storage/state.py](/home/sean/projects/uconsole_monitor/monitor/storage/state.py)
+- [monitor/tray/main.py](/home/sean/projects/uconsole_monitor/monitor/tray/main.py)
+
+## Run Locally
+
+Run one collection cycle:
 
 ```bash
 python3 -m monitor.agent.main --once
+```
+
+Run the collector loop:
+
+```bash
 python3 -m monitor.agent.main
+```
+
+Run the tray UI:
+
+```bash
 python3 -m monitor.tray.main
 ```
 
-## Config
+## Configuration
 
-Default config lives in [config.json](/home/sean/projects/uconsole_monitor/config.json). Edit the Mihomo controller settings, interfaces, thresholds, and paths there as needed.
+Main config file:
 
-## Tray dependency
+- [config.json](/home/sean/projects/uconsole_monitor/config.json)
 
-The tray requires one of these GI namespaces:
+Current config includes:
+
+- collection interval
+- storage paths
+- primary interface
+- required services
+- Mihomo controller settings
+- thresholds
+- UI stale timeout
+
+## Tray Requirements
+
+The tray currently depends on a GI AppIndicator namespace:
 
 - `AyatanaAppIndicator3`
-- `AppIndicator3`
+- or `AppIndicator3`
 
-On Debian this is usually provided by packages such as `gir1.2-ayatanaappindicator3-0.1` or a compatible AppIndicator package.
+On Debian, this is typically provided by:
+
+- `gir1.2-ayatanaappindicator3-0.1`
 
 ## systemd
 
-Templates are under [systemd/monitor-agent.service](/home/sean/projects/uconsole_monitor/systemd/monitor-agent.service) and [systemd/monitor-tray.service](/home/sean/projects/uconsole_monitor/systemd/monitor-tray.service).
+Included unit templates:
+
+- [systemd/monitor-agent.service](/home/sean/projects/uconsole_monitor/systemd/monitor-agent.service)
+- [systemd/monitor-tray.service](/home/sean/projects/uconsole_monitor/systemd/monitor-tray.service)
+
+The intended deployment shape is:
+
+- system service for the agent
+- user service for the tray
+
+## GitHub CI
+
+This repository includes a minimal GitHub Actions workflow that currently checks:
+
+- Python source compilation with `compileall`
+
+Workflow file:
+
+- [.github/workflows/ci.yml](/home/sean/projects/uconsole_monitor/.github/workflows/ci.yml)
+
+## Architecture Notes
+
+For current implementation details, design tradeoffs, desktop integration notes, and next-iteration guidance, see:
+
+- [CURRENT_ARCHITECTURE.md](/home/sean/projects/uconsole_monitor/CURRENT_ARCHITECTURE.md)
