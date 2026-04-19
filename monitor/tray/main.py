@@ -56,6 +56,8 @@ class TrayApp:
         self.details_labels: dict[str, Gtk.Label] = {}
         self.logs_label: Gtk.Label | None = None
         self.details_button: Gtk.Button | None = None
+        self.refresh_button: Gtk.Button | None = None
+        self.refresh_process: subprocess.Popen | None = None
 
         self.indicator = self.indicator_module.Indicator.new(
             "uconsole-monitor",
@@ -84,7 +86,16 @@ class TrayApp:
         return menu
 
     def run_agent_once(self) -> None:
-        subprocess.Popen([sys.executable, "-m", "monitor.agent.main", "--once"])
+        if self.refresh_process is not None and self.refresh_process.poll() is None:
+            return
+        self.refresh_process = subprocess.Popen(
+            [sys.executable, "-m", "monitor.agent.main", "--once"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        if self.refresh_button is not None:
+            self.refresh_button.set_sensitive(False)
+        GLib.child_watch_add(GLib.PRIORITY_DEFAULT, self.refresh_process.pid, self.on_refresh_complete)
 
     def build_details_window(self) -> Gtk.Window:
         window = Gtk.Window(title="uConsole Monitor")
@@ -108,9 +119,23 @@ class TrayApp:
         header_row.pack_start(header, True, True, 0)
         self.details_labels["overall"] = header
 
-        details_button = Gtk.Button(label="Details")
+        actions_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        header_row.pack_end(actions_box, False, False, 0)
+
+        refresh_button = Gtk.Button()
+        refresh_button.set_relief(Gtk.ReliefStyle.NONE)
+        refresh_button.set_tooltip_text("Refresh")
+        refresh_button.add(Gtk.Image.new_from_icon_name("view-refresh-symbolic", Gtk.IconSize.BUTTON))
+        refresh_button.connect("clicked", lambda *_: self.run_agent_once())
+        actions_box.pack_start(refresh_button, False, False, 0)
+        self.refresh_button = refresh_button
+
+        details_button = Gtk.Button()
+        details_button.set_relief(Gtk.ReliefStyle.NONE)
+        details_button.set_tooltip_text("Alerts and Changes")
+        details_button.add(Gtk.Image.new_from_icon_name("dialog-warning-symbolic", Gtk.IconSize.BUTTON))
         details_button.connect("clicked", lambda *_: self.show_logs())
-        header_row.pack_end(details_button, False, False, 0)
+        actions_box.pack_start(details_button, False, False, 0)
         self.details_button = details_button
 
         grid = Gtk.Grid()
@@ -141,10 +166,6 @@ class TrayApp:
             frame_box.pack_start(label, False, False, 0)
             self.details_labels[key] = label
             grid.attach(frame, col, row, 1, 1)
-
-        button = Gtk.Button(label="Refresh")
-        button.connect("clicked", lambda *_: self.run_agent_once())
-        root.pack_end(button, False, False, 0)
 
         return window
 
@@ -177,6 +198,18 @@ class TrayApp:
     def on_delete_window(self, window: Gtk.Window, *_args) -> bool:
         window.hide()
         return True
+
+    def on_refresh_complete(self, pid: int, _wait_status: int) -> None:
+        if self.refresh_process is not None:
+            try:
+                self.refresh_process.wait(timeout=0)
+            except subprocess.TimeoutExpired:
+                pass
+            self.refresh_process = None
+        if self.refresh_button is not None:
+            self.refresh_button.set_sensitive(True)
+        GLib.spawn_close_pid(pid)
+        self.update_from_state()
 
     def show_details(self) -> None:
         if self.details_window is None:

@@ -50,6 +50,12 @@ It:
 
 The tray uses Ayatana AppIndicator on this machine.
 
+Important interaction detail:
+
+- the main status window can trigger a one-shot collection
+- when the refresh action completes, the currently open window updates in place
+- the user does not need to close and reopen the tray window to see fresh state
+
 ## Health Dimensions
 
 The current health model exposes these dimensions:
@@ -222,17 +228,20 @@ Current layout:
   - hostname
   - updated age
   - alert count summary
-  - `Details` button
+  - compact action buttons on the top-right
+    - refresh icon button
+    - details/warning icon button
 - card grid
   - row 1: `CPU / Memory`
   - row 2: `Network / Mihomo`
   - row 3: `Disk / Battery`
-- bottom `Refresh` button
 
 Status display rules:
 
 - dimension cards show only a color dot, not `OK/WARN/ERROR` text
 - alert counts are shown at the top with colored numeric indicators
+- the main window is intentionally constrained to fit the device screen without scrollbars
+- long alert and change content is not shown inline on the main window
 
 ### Details window
 
@@ -242,6 +251,11 @@ The second-level details window contains:
 - recent changes
 
 This was introduced because long alert/change content overflowed the main window.
+
+Current interaction rules:
+
+- the main window shows only compact alert counts
+- the details window is the place for full alert text and recent change history
 
 ## Config
 
